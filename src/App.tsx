@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect, FormEvent } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import { 
   PenTool, 
   Search, 
@@ -122,7 +121,7 @@ const translations = {
       ]
     },
     footer: {
-      copy: '© 2024 CopyPro Services. Все права защищены.'
+      copy: '© 2024 Coperat. Все права защищены.'
     }
   },
   uz: {
@@ -217,7 +216,7 @@ const translations = {
       ]
     },
     footer: {
-      copy: '© 2024 CopyPro Services. Barcha huquqlar himoyalangan.'
+      copy: '© 2024 Coperat. Barcha huquqlar himoyalangan.'
     }
   },
   en: {
@@ -312,7 +311,7 @@ const translations = {
       ]
     },
     footer: {
-      copy: '© 2024 CopyPro Services. All rights reserved.'
+      copy: '© 2024 Coperat. All rights reserved.'
     }
   }
 };
@@ -418,74 +417,7 @@ const ContactModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => voi
   );
 }
 
-const HeadlineImprover = ({ t }: { t: any }) => {
-  const [headline, setHeadline] = useState('');
-  const [improvedHeadline, setImprovedHeadline] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!headline.trim()) return;
-    setIsLoading(true);
-    setError('');
-    setImprovedHeadline('');
-
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      const prompt = `You are an expert copywriter. Your task is to improve the following headline to make it more catchy, powerful, and engaging. Provide only one, final, improved version of the headline, without any extra text or explanations.\n\nOriginal headline: "${headline}"\n\nImproved headline:`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-      });
-
-      const improvedText = response.text?.trim();
-
-      if (!improvedText) {
-        throw new Error('AI returned an empty response.');
-      }
-
-      setImprovedHeadline(improvedText);
-    } catch (err) {
-      setError('Не удалось получить ответ от ИИ. Попробуйте позже.');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="mt-16 bg-white p-8 rounded-3xl shadow-lg border border-blue-100/50">
-      <h4 className="text-xl font-bold text-center mb-1 text-gray-900">Проверьте свою идею заголовка</h4>
-      <p className="text-center text-sm text-gray-500 mb-6">Введите заголовок, и ИИ предложит улучшенный вариант.</p>
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
-        <input 
-          type="text"
-          value={headline}
-          onChange={(e) => setHeadline(e.target.value)}
-          placeholder="Например, 'Услуги копирайтера'"
-          className="flex-grow px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
-        />
-        <button 
-          type="submit"
-          disabled={isLoading}
-          className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-[0.98] disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {isLoading ? 'Думаю...' : 'Улучшить'}
-        </button>
-      </form>
-      {improvedHeadline && (
-        <div className="mt-6 p-6 bg-green-50 border border-green-200 rounded-2xl">
-          <p className="text-sm font-bold text-green-800 mb-2">Предложенный вариант:</p>
-          <p className="font-serif text-lg text-green-900">«{improvedHeadline}»</p>
-        </div>
-      )}
-      {error && <p className="mt-4 text-center text-red-600 text-sm">{error}</p>}
-    </div>
-  );
-}
-
+// --- Components ---
 
 export default function App() {
   const [lang, setLang] = useState<Language>('ru');
@@ -494,30 +426,20 @@ export default function App() {
   const [isContactModalOpen, setContactModalOpen] = useState(false);
   const t = translations[lang];
 
-  const [reviews, setReviews] = useState([]);
-
-  const [stats, setStats] = useState({ visitCount: 0, reviewCount: 0 });
+  const [reviews, setReviews] = useState<{name: string, email: string, text: string}[]>([]);
 
   useEffect(() => {
-    // 1. Track visit
-    fetch('/api/track-visit', { 
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    }).catch(error => console.error('Error tracking visit:', error));
+    // 1. Fetch reviews from localStorage
+    const savedReviews = localStorage.getItem('coperat_reviews');
+    if (savedReviews) {
+      try {
+        setReviews(JSON.parse(savedReviews));
+      } catch (e) {
+        console.error('Error parsing reviews:', e);
+      }
+    }
 
-    // 2. Fetch stats
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => setStats(data))
-      .catch(err => console.error('Error fetching stats:', err));
-
-    // 3. Fetch reviews
-    fetch('/api/reviews')
-      .then(res => res.json())
-      .then(data => setReviews(data))
-      .catch(err => console.error('Error fetching reviews:', err));
-
-    // 4. Scroll listener
+    // 2. Scroll listener
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
@@ -550,7 +472,7 @@ export default function App() {
               <PenTool className="text-white w-6 h-6" />
             </div>
             <span className="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-600">
-              CopyPro Services
+              Coperat
             </span>
           </div>
 
@@ -656,9 +578,6 @@ export default function App() {
               </motion.div>
             ))}
           </div>
-
-          <HeadlineImprover t={t} />
-
         </div>
       </section>
 
@@ -757,33 +676,37 @@ export default function App() {
             {/* Review Form */}
             <div className="bg-white p-10 rounded-[32px] shadow-sm border border-gray-100">
               <h3 className="text-2xl font-bold mb-8">{t.reviews.formTitle}</h3>
-              <form className="space-y-6" onSubmit={async (e) => { 
+              <form className="space-y-6" onSubmit={(e) => { 
                 e.preventDefault(); 
                 const form = e.target as HTMLFormElement;
-                const name = (form.elements[0] as HTMLInputElement).value;
-                const email = (form.elements[1] as HTMLInputElement).value;
-                const text = (form.elements[2] as HTMLTextAreaElement).value;
-                await fetch('/api/reviews', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ name, email, text }),
-                });
-                fetch('/api/reviews').then(res => res.json()).then(data => setReviews(data));
+                const nameInput = form.elements[0] as HTMLInputElement;
+                const emailInput = form.elements[1] as HTMLInputElement;
+                const textInput = form.elements[2] as HTMLTextAreaElement;
+                
+                const newReview = { 
+                  name: nameInput.value, 
+                  email: emailInput.value, 
+                  text: textInput.value 
+                };
+                
+                const updatedReviews = [newReview, ...reviews];
+                setReviews(updatedReviews);
+                localStorage.setItem('coperat_reviews', JSON.stringify(updatedReviews));
                 form.reset();
               }}>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700 ml-1">{t.reviews.name}</label>
-                    <input type="text" className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none" placeholder="John Doe" />
+                    <input type="text" required className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none" placeholder="John Doe" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-gray-700 ml-1">{t.reviews.email}</label>
-                    <input type="email" className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none" placeholder="john@example.com" />
+                    <input type="email" required className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none" placeholder="john@example.com" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-700 ml-1">{t.reviews.text}</label>
-                  <textarea rows={4} className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none resize-none" placeholder="..." />
+                  <textarea rows={4} required className="w-full px-5 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none resize-none" placeholder="..." />
                 </div>
                 <button className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 active:scale-[0.98]">
                   {t.reviews.submit}
@@ -808,9 +731,9 @@ export default function App() {
                   </p>
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center font-bold text-blue-600">
-                      {review.name[0]}
+                      {review.name ? review.name[0] : '?'}
                     </div>
-                    <span className="font-bold text-gray-900">{review.name}</span>
+                    <span className="font-bold text-gray-900">{review.name || 'Anonymous'}</span>
                   </div>
                 </motion.div>
               ))}
@@ -852,7 +775,7 @@ export default function App() {
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
                   <PenTool className="text-white w-6 h-6" />
                 </div>
-                <span className="text-xl font-bold tracking-tight">CopyPro Services</span>
+                <span className="text-xl font-bold tracking-tight">Coperat</span>
               </div>
               <p className="text-gray-400 leading-relaxed">
                 {t.hero.subtitle}
@@ -897,18 +820,6 @@ export default function App() {
           <div className="pt-10 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-sm text-gray-500">
               <p>{t.footer.copy}</p>
-            </div>
-            
-            <div className="flex items-center gap-10 bg-gray-900/50 px-8 py-4 rounded-2xl border border-gray-800/50">
-              <div className="text-center">
-                <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Посетителей</p>
-                <p className="text-xl font-bold text-blue-400">{stats.visitCount}</p>
-              </div>
-              <div className="w-px h-8 bg-gray-800"></div>
-              <div className="text-center">
-                <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Заказов</p>
-                <p className="text-xl font-bold text-cyan-400">{stats.reviewCount}</p>
-              </div>
             </div>
           </div>
         </div>
